@@ -1,10 +1,14 @@
 import React from 'react';
 import FileUpload from './components/FileUpload';
+import { CssBaseline, Container } from '@mui/material';
 
 function App() {
   return (
     <div className="App">
-      <FileUpload />
+      <CssBaseline />
+      <Container>
+        <FileUpload />
+      </Container>
     </div>
   );
 }

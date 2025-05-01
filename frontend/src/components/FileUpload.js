@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
 import { uploadFile } from '../services/fileUploadService';
+import {
+  Box,
+  Button,
+  Typography,
+  TextField,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 
 const FileUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [responseContent, setResponseContent] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -17,33 +26,75 @@ const FileUpload = () => {
       return;
     }
 
+    setLoading(true);
+    setError('');
+    setResponseContent('');
+
     try {
       const response = await uploadFile(selectedFile);
-      setResponseContent(response.content); // Hiển thị nội dung file từ backend
-      setError('');
+      setResponseContent(response.content); // Hiển thị nội dung trả về từ backend
     } catch (err) {
       setError(err.message);
-      setResponseContent('');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container">
-      <h1>Upload File</h1>
+    <Box
+      sx={{
+        maxWidth: 600,
+        margin: 'auto',
+        padding: 4,
+        border: '1px solid #ccc',
+        borderRadius: 2,
+        boxShadow: 3,
+      }}
+    >
+      <Typography variant="h4" gutterBottom>
+        Upload File
+      </Typography>
       <form onSubmit={handleSubmit}>
-        <div>
-          <input type="file" onChange={handleFileChange} />
-        </div>
-        <button type="submit">Upload</button>
+        <TextField
+          type="file"
+          fullWidth
+          onChange={handleFileChange}
+          inputProps={{ accept: '*' }}
+          sx={{ marginBottom: 2 }}
+        />
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          fullWidth
+          disabled={loading}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Upload'}
+        </Button>
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {responseContent && (
-        <div>
-          <h2>File Content:</h2>
-          <pre>{responseContent}</pre>
-        </div>
+      {error && (
+        <Alert severity="error" sx={{ marginTop: 2 }}>
+          {error}
+        </Alert>
       )}
-    </div>
+      {responseContent && (
+        <Box sx={{ marginTop: 2 }}>
+          <Typography variant="h6">File Content:</Typography>
+          <Box
+            component="pre"
+            sx={{
+              backgroundColor: '#f4f4f4',
+              padding: 2,
+              borderRadius: 1,
+              overflow: 'auto',
+              maxHeight: 300,
+            }}
+          >
+            {responseContent}
+          </Box>
+        </Box>
+      )}
+    </Box>
   );
 };
 

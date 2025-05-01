@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h2 class="text-center mb-4">Upload File (.txt hoặc .docx)</h2>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form action="/v1/upload" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Chọn file:</label>
+                        <input type="file" name="file" id="file" class="form-control" accept=".txt,.docx" required>
+                        <div class="invalid-feedback">Vui lòng chọn file hợp lệ (.txt hoặc .docx).</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Tải lên</button>
+                </form>
+            </div>
+        </div>
+        {% if content %}
+        <div class="mt-4">
+            <h3>Nội dung file:</h3>
+            <pre class="bg-white p-3 border rounded">{{ content }}</pre>
+        </div>
+        {% endif %}
+    </div>
+    <div class="mt-5">
+        <h3>Cấu trúc dự án:</h3>
+        <pre class="bg-white p-3 border rounded">
+project-root/
+├── backend/          # Chứa mã nguồn FastAPI
+│   ├── app/
+│   ├── logs/
+│   ├── main.py
+│   ├── requirements.txt
+│   └── ...
+├── frontend/         # Chứa mã nguồn Angular
+│   ├── src/
+│   ├── angular.json
+│   ├── package.json
+│   └── ...
+        </pre>
+    </div>
+    <div class="mt-5">
+        <h3>Cấu hình FastAPI:</h3>
+        <pre class="bg-white p-3 border rounded">
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1.endpoints import file
+
+app = FastAPI()
+
+# Cấu hình CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],  # URL của Angular dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Đăng ký router
+app.include_router(file.router, prefix="/v1", tags=["File Upload"])
+        </pre>
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,15 +1,36 @@
 import os
 from datetime import datetime
-from fastapi import APIRouter, File, UploadFile, Form, Request
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-# Tạo thư mục lưu trữ nếu chưa tồn tại
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Thư mục gốc để lưu file
+UPLOAD_ROOT = "./uploads"
+MAX_FOLDER_SIZE_MB = 50
+MAX_FOLDER_SIZE_BYTES = MAX_FOLDER_SIZE_MB * 1024 * 1024
+
+# Tạo thư mục gốc nếu chưa tồn tại
+os.makedirs(UPLOAD_ROOT, exist_ok=True)
+
+def get_folder_size(folder_path):
+    """Tính tổng dung lượng của thư mục."""
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            total_size += os.path.getsize(fp)
+    return total_size
+
+def delete_oldest_file(folder_path):
+    """Xóa file cũ nhất trong thư mục."""
+    files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
+    files = [f for f in files if os.path.isfile(f)]
+    if files:
+        oldest_file = min(files, key=os.path.getctime)
+        os.remove(oldest_file)
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -18,21 +39,16 @@ async def index(request: Request):
 @router.post("/upload", response_class=HTMLResponse)
 async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
-        # Kiểm tra định dạng file và phần mở rộng
-        allowed_extensions = [".txt", ".docx"]
-        _, ext = os.path.splitext(file.filename)
-        if file.content_type not in ["text/plain", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"] or ext.lower() not in allowed_extensions:
-            return templates.TemplateResponse("index.html", {
-                "request": request,
-                "content": "Chỉ hỗ trợ file .txt hoặc .docx"
-            })
-
-        # Tạo thư mục con theo ngày
+        # Tạo thư mục theo ngày
         today = datetime.now().strftime("%Y-%m-%d")
-        daily_folder = os.path.join(UPLOAD_FOLDER, today)
+        daily_folder = os.path.join(UPLOAD_ROOT, today)
         os.makedirs(daily_folder, exist_ok=True)
 
-        # Xử lý tên file với hậu tố thời gian
+        # Kiểm tra và xóa file cũ nếu vượt quá dung lượng
+        while get_folder_size(daily_folder) > MAX_FOLDER_SIZE_BYTES:
+            delete_oldest_file(daily_folder)
+
+        # Xử lý tên file để tránh trùng lặp
         original_filename = file.filename
         name, ext = os.path.splitext(original_filename)
         timestamp = datetime.now().strftime("%H%M%S")  # Thời gian chính xác (giờ, phút, giây)
@@ -40,24 +56,21 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         file_path = os.path.join(daily_folder, new_filename)
 
         # Lưu file vào thư mục
+        content = await file.read()
         with open(file_path, "wb") as f:
-            f.write(await file.read())
+            f.write(content)
 
-        # Nếu là file .txt, đọc nội dung
-        if file.content_type == "text/plain":
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                content_str = f.read()
-        else:
-            content_str = f"File {new_filename} đã được tải lên thành công."
+        # Đọc nội dung file (giới hạn hiển thị 1000 ký tự)
+        file_content = content.decode("utf-8", errors="ignore")[:1000]
 
-        # Trả nội dung file về giao diện
+        # Trả về giao diện với nội dung file
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "content": content_str
+            "content": file_content
         })
     except Exception as e:
         # Xử lý lỗi và hiển thị trên giao diện
         return templates.TemplateResponse("index.html", {
             "request": request,
-            "content": f"Lỗi khi xử lý file: {str(e)}"
+            "content": f"Lỗi khi tải lên file: {str(e)}"
         })

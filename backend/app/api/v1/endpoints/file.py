@@ -34,10 +34,10 @@ def delete_oldest_file(folder_path):
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "content": ""})
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@router.post("/upload", response_class=HTMLResponse)
-async def upload_file(request: Request, file: UploadFile = File(...)):
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
     try:
         # Tạo thư mục theo ngày
         today = datetime.now().strftime("%Y-%m-%d")
@@ -63,14 +63,8 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         # Đọc nội dung file (giới hạn hiển thị 1000 ký tự)
         file_content = content.decode("utf-8", errors="ignore")[:1000]
 
-        # Trả về giao diện với nội dung file
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "content": file_content
-        })
+        # Trả về JSON chứa nội dung file
+        return {"filename": new_filename, "content": file_content}
     except Exception as e:
-        # Xử lý lỗi và hiển thị trên giao diện
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "content": f"Lỗi khi tải lên file: {str(e)}"
-        })
+        # Trả về lỗi dưới dạng JSON
+        return {"error": str(e)}

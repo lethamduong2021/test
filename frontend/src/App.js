@@ -1,5 +1,5 @@
 import React from 'react';
-import FileUpload from './components/FileUpload';
+import FileUpload from './components/fileUpload';
 import { CssBaseline, Container } from '@mui/material';
 
 function App() {

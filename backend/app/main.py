@@ -1,7 +1,8 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.endpoints import file
+from app.api.v1.endpoints.file_upload.router import router as upload_router
+from app.api.v1.endpoints.file_train.router import router as train_router
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -20,4 +21,5 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(file.router, prefix="/v1", tags=["File Upload"])
+app.include_router(upload_router, prefix="/v1", tags=["File Upload"])
+app.include_router(train_router, prefix="/v1", tags=["Train"])

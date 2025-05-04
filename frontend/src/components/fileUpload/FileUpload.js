@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Box, Typography, Alert, Container } from '@mui/material';
+import { Box, Typography, Alert, IconButton } from '@mui/material';
 import FileUploadForm from './FileUploadForm';
 import FileContent from './FileContent';
 import TrainButton from './TrainButton';
 import TrainStatus from '../train/TrainStatus';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -68,32 +69,36 @@ const FileUpload = () => {
     }
   };
 
+  const handleCopy = () => {
+    if (responseContent) {
+      navigator.clipboard.writeText(responseContent);
+    }
+  };
+
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          padding: { xs: 2, sm: 4 },
-          border: '1px solid #ccc',
-          borderRadius: 2,
-          boxShadow: 3,
-          marginTop: { xs: 2, sm: 4 },
-        }}
-      >
-        <Typography variant="h4" gutterBottom>
-          Tải lên tệp
-        </Typography>
-        <FileUploadForm
-          onFileChange={handleFileChange}
-          onSubmit={handleSubmit}
-          loading={loading}
-          disabled={!!uploadedFilename || isTraining}
-        />
-        {error && (
-          <Alert severity="error" sx={{ marginTop: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {responseContent && <FileContent content={responseContent} />}
+    <Box
+      sx={{
+        maxWidth: 600,
+        margin: 'auto',
+        padding: 4,
+        border: '1px solid #ccc',
+        borderRadius: 2,
+        boxShadow: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+      }}
+    >
+      <Typography variant="h4" gutterBottom>
+        Tải lên tệp
+      </Typography>
+      <FileUploadForm
+        onFileChange={handleFileChange}
+        onSubmit={handleSubmit}
+        loading={loading}
+        disabled={!!uploadedFilename || isTraining}
+      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {uploadedFilename && (
           <TrainButton
             onClick={() => {
@@ -108,28 +113,36 @@ const FileUpload = () => {
           </TrainButton>
         )}
         <TrainStatus status={trainStatus} />
-        <Dialog open={confirmStop} onClose={() => setConfirmStop(false)}>
-          <DialogTitle>Bạn có muốn dừng huấn luyện không?</DialogTitle>
-          <DialogActions>
-            <Button onClick={() => setConfirmStop(false)} color="primary">
-              Không
-            </Button>
-            <Button
-              onClick={async () => {
-                setConfirmStop(false);
-                await axios.post('http://localhost:8000/v1/train/stop', { filename: uploadedFilename });
-                dispatch(setTrainStatus('Đã dừng train!'));
-                dispatch(setIsTraining(false));
-              }}
-              color="error"
-              autoFocus
-            >
-              Đồng ý
-            </Button>
-          </DialogActions>
-        </Dialog>
       </Box>
-    </Container>
+      {responseContent && (
+        <FileContent content={responseContent} onCopy={handleCopy} />
+      )}
+      {error && (
+        <Alert severity="error" sx={{ marginTop: 2 }}>
+          {error}
+        </Alert>
+      )}
+      <Dialog open={confirmStop} onClose={() => setConfirmStop(false)}>
+        <DialogTitle>Bạn có muốn dừng huấn luyện không?</DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setConfirmStop(false)} color="primary">
+            Không
+          </Button>
+          <Button
+            onClick={async () => {
+              setConfirmStop(false);
+              await axios.post('http://localhost:8000/v1/train/stop', { filename: uploadedFilename });
+              dispatch(setTrainStatus('Đã dừng train!'));
+              dispatch(setIsTraining(false));
+            }}
+            color="error"
+            autoFocus
+          >
+            Đồng ý
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

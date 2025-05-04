@@ -29,6 +29,7 @@ Thumbs.db
 # Uploads
 uploads/
 gpt2-finetuned/
+distilgpt2-finetuned/
 *.pt
 *.pth
 

@@ -144,7 +144,10 @@ const FileUpload = () => {
         </Button>
       )}
       {trainStatus && (
-        <Alert severity="info" sx={{ marginTop: 2 }}>
+        <Alert
+          severity={trainStatus.startsWith('Lỗi') ? "error" : "info"}
+          sx={{ marginTop: 2 }}
+        >
           {trainStatus}
         </Alert>
       )}

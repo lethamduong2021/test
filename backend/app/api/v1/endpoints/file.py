@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import torch
+from transformers import TrainerCallback
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -86,13 +87,14 @@ async def train_ai(request: TrainRequest):
         run_training(file_path)
         return {"message": "Quá trình train đã thực hiện xong"}
     except Exception as e:
-        return {"error": f"Train thất bại: {str(e)}"}
+        raise HTTPException(status_code=500, detail=f"Train thất bại: {str(e)}")
 
 def run_training(file_path):
     from transformers import GPT2LMHeadModel, GPT2Tokenizer, Trainer, TrainingArguments, DataCollatorForLanguageModeling
     from datasets import load_dataset
+    import torch
 
-    model_name = "gpt2"
+    model_name = "distilgpt2"
     tokenizer = GPT2Tokenizer.from_pretrained(model_name)
     model = GPT2LMHeadModel.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
@@ -106,7 +108,7 @@ def run_training(file_path):
     tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
     training_args = TrainingArguments(
-        output_dir="./gpt2-finetuned",
+        output_dir="./distilgpt2-finetuned",
         overwrite_output_dir=True,
         num_train_epochs=3,
         per_device_train_batch_size=4,
@@ -115,15 +117,26 @@ def run_training(file_path):
         prediction_loss_only=True,
         logging_steps=100,
     )
+
+    class ProgressPercentCallback(TrainerCallback):
+        def on_step_end(self, args, state, control, **kwargs):
+            if state.max_steps > 0:
+                percent = (state.global_step / state.max_steps) * 100
+                print(f"\rTiến trình: {percent:.2f}%", end="")
+
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_dataset["train"],
         data_collator=data_collator,
+        callbacks=[ProgressPercentCallback()],
     )
     trainer.train()
-    model.save_pretrained("./gpt2-finetuned")
-    tokenizer.save_pretrained("./gpt2-finetuned")
-    print("Huấn luyện mô hình hoàn tất!")
+    model.save_pretrained("./distilgpt2-finetuned")
+    tokenizer.save_pretrained("./distilgpt2-finetuned")
+    print("Huấn luyện mô hình DistilGPT2 hoàn tất!")
 
-print(torch.__version__)
+if torch.cuda.is_available():
+    print("Đang train trên GPU:", torch.cuda.get_device_name(0))
+else:
+    print("Đang train trên CPU.")

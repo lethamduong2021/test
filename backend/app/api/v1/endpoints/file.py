@@ -39,6 +39,12 @@ async def index(request: Request):
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
+        # Kiểm tra dung lượng file (tối đa 5MB)
+        MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+        content = await file.read()
+        if len(content) > MAX_FILE_SIZE:
+            return {"error": "File vượt quá dung lượng tối đa 5MB."}
+
         # Tạo thư mục theo ngày
         today = datetime.now().strftime("%Y-%m-%d")
         daily_folder = os.path.join(UPLOAD_ROOT, today)
@@ -56,12 +62,11 @@ async def upload_file(file: UploadFile = File(...)):
         file_path = os.path.join(daily_folder, new_filename)
 
         # Lưu file vào thư mục
-        content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
 
-        # Đọc nội dung file (giới hạn hiển thị 1000 ký tự)
-        file_content = content.decode("utf-8", errors="ignore")[:1000]
+        # Đọc nội dung file (không giới hạn ký tự)
+        file_content = content.decode("utf-8", errors="ignore")
 
         # Trả về JSON chứa nội dung file
         return {"filename": new_filename, "content": file_content}

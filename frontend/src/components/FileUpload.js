@@ -10,12 +10,15 @@ import {
   IconButton,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import axios from 'axios';
 
 const FileUpload = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [responseContent, setResponseContent] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadedFilename, setUploadedFilename] = useState('');
+  const [trainStatus, setTrainStatus] = useState('');
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -35,10 +38,25 @@ const FileUpload = () => {
     try {
       const response = await uploadFile(selectedFile);
       setResponseContent(response.content); // Hiển thị nội dung trả về từ backend
+      setUploadedFilename(response.filename);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTrain = async () => {
+    setTrainStatus('Đang train...');
+    try {
+      const res = await axios.post('http://localhost:8000/v1/train', { filename: uploadedFilename });
+      if (res.data.error) {
+        setTrainStatus('Lỗi: ' + res.data.error);
+      } else {
+        setTrainStatus('Quá trình train đã thực hiện xong');
+      }
+    } catch (err) {
+      setTrainStatus('Có lỗi khi train!');
     }
   };
 
@@ -114,6 +132,21 @@ const FileUpload = () => {
             {responseContent}
           </Box>
         </Box>
+      )}
+      {uploadedFilename && (
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleTrain}
+          sx={{ marginTop: 2 }}
+        >
+          Train
+        </Button>
+      )}
+      {trainStatus && (
+        <Alert severity="info" sx={{ marginTop: 2 }}>
+          {trainStatus}
+        </Alert>
       )}
     </Box>
   );

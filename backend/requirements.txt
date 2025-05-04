@@ -1,6 +1,9 @@
-
 fastapi
 uvicorn
 python-multipart
 python-docx
 jinja2
+transformers
+datasets
+torch
+accelerate>=0.26.0

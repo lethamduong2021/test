@@ -8,14 +8,19 @@ __pycache__/
 # Virtual environment
 venv/
 env/
+ENV/
+.venv/
+.python-version
 
 # Logs
 logs/
 *.log
+*.tmp
 
 # IDE/Editor
 .vscode/
 .idea/
+*.swp
 
 # OS generated files
 .DS_Store
@@ -23,3 +28,12 @@ Thumbs.db
 
 # Uploads
 uploads/
+gpt2-finetuned/
+*.pt
+*.pth
+
+# File môi trường
+.env
+
+# Jupyter Notebook checkpoint
+.ipynb_checkpoints/
